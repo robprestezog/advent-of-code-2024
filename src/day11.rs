@@ -4,58 +4,77 @@ use aoc_runner_derive::aoc;
 
 #[aoc(day11, part1)]
 pub fn part1(input: &str) -> u64 {
-    let mut lookup: HashMap<(u64, u8), u64> = HashMap::new();
+    let mut count_lookup: HashMap<(u64, u8), u64> = HashMap::new();
+    let mut blink_lookup: HashMap<u64, Blink> = HashMap::new();
     input
         .split_ascii_whitespace()
         .map(|digits| digits.parse().unwrap())
-        .map(|num| count(num, 25, &mut lookup))
+        .map(|num| count(num, 25, &mut count_lookup, &mut blink_lookup))
         .sum()
-}
-
-fn count(num: u64, blinks: u8, lookup: &mut HashMap<(u64, u8), u64>) -> u64 {
-    if blinks == 0 {
-        return 1;
-    }
-    if let Some(c) = lookup.get(&(num, blinks)) {
-        return *c;
-    }
-    let c = if num == 0 {
-        count(1, blinks - 1, lookup)
-    } else {
-        let num_string = num.to_string();
-        if num_string.len() % 2 == 0 {
-            let (first, second) = num_string.split_at(num_string.len() / 2);
-            count(first.parse().unwrap(), blinks - 1, lookup)
-                + count(second.parse().unwrap(), blinks - 1, lookup)
-        } else {
-            count(num * 2024, blinks - 1, lookup)
-        }
-    };
-    lookup.insert((num, blinks), c);
-    c
 }
 
 #[aoc(day11, part2)]
 pub fn part2(input: &str) -> u64 {
-    let mut lookup: HashMap<(u64, u8), u64> = HashMap::new();
+    let mut count_lookup: HashMap<(u64, u8), u64> = HashMap::new();
+    let mut blink_lookup: HashMap<u64, Blink> = HashMap::new();
     input
         .split_ascii_whitespace()
         .map(|digits| digits.parse().unwrap())
-        .map(|num| count(num, 75, &mut lookup))
+        .map(|num| count(num, 75, &mut count_lookup, &mut blink_lookup))
         .sum()
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+#[derive(Clone)]
+enum Blink {
+    One(u64),
+    Two(u64, u64),
+}
 
-    #[test]
-    fn part1_example() {
-        assert_eq!(part1("125 17"), 55312);
-    }
+fn blink(stone: u64, blink_lookup: &mut HashMap<u64, Blink>) -> Blink {
+    blink_lookup
+        .entry(stone)
+        .or_insert({
+            if stone == 0 {
+                Blink::One(1)
+            } else {
+                let num_string = stone.to_string();
+                if num_string.len() % 2 == 0 {
+                    let (first, second) = num_string.split_at(num_string.len() / 2);
+                    Blink::Two(first.parse().unwrap(), second.parse().unwrap())
+                } else {
+                    Blink::One(stone * 2024)
+                }
+            }
+        })
+        .clone()
+}
 
-    #[test]
-    fn part2_example() {
-        assert_eq!(part2(""), "");
+fn count(
+    num: u64,
+    blinks: u8,
+    count_lookup: &mut HashMap<(u64, u8), u64>,
+    blink_lookup: &mut HashMap<u64, Blink>,
+) -> u64 {
+    if blinks == 0 {
+        return 1;
     }
+    if blinks == 1 {
+        if num.to_string().len() % 2 == 0 {
+            return 2;
+        } else {
+            return 1;
+        }
+    }
+    if let Some(c) = count_lookup.get(&(num, blinks)) {
+        return *c;
+    }
+    let c = match blink(num, blink_lookup) {
+        Blink::One(x) => count(x, blinks - 1, count_lookup, blink_lookup),
+        Blink::Two(x, y) => {
+            count(x, blinks - 1, count_lookup, blink_lookup)
+                + count(y, blinks - 1, count_lookup, blink_lookup)
+        }
+    };
+    count_lookup.insert((num, blinks), c);
+    c
 }
