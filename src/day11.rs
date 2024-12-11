@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use aoc_runner_derive::aoc;
 
 #[aoc(day11, part1)]
-fn part1(input: &str) -> u64 {
+pub fn part1(input: &str) -> u64 {
     let mut lookup: HashMap<(u64, u8), u64> = HashMap::new();
     input
         .split_ascii_whitespace()
@@ -36,7 +36,7 @@ fn count(num: u64, blinks: u8, lookup: &mut HashMap<(u64, u8), u64>) -> u64 {
 }
 
 #[aoc(day11, part2)]
-fn part2(input: &str) -> u64 {
+pub fn part2(input: &str) -> u64 {
     let mut lookup: HashMap<(u64, u8), u64> = HashMap::new();
     input
         .split_ascii_whitespace()
