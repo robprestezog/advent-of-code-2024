@@ -201,18 +201,3 @@ fn part2(input: &str) -> u32 {
     }
     graph.score(nodes)
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn part1_example() {
-        assert_eq!(part1("<EXAMPLE>"), "<RESULT>");
-    }
-
-    #[test]
-    fn part2_example() {
-        assert_eq!(part2("<EXAMPLE>"), "<RESULT>");
-    }
-}
