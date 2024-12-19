@@ -32,10 +32,10 @@ fn towel(stripes: &str) -> Towel {
     }
 }
 
-fn can_make(
-    stripes: &[Color],
+fn can_make<'a>(
+    stripes: &'a [Color],
     towels: &Vec<Towel>,
-    lookup: &mut HashMap<Vec<Color>, bool>,
+    lookup: &mut HashMap<&'a [Color], bool>,
 ) -> bool {
     if stripes.len() == 0 {
         return true;
@@ -49,13 +49,13 @@ fn can_make(
         if towel.stripes.len() <= stripes.len() {
             if towel.stripes[..] == stripes[..towel.stripes.len()] {
                 if can_make(&stripes[towel.stripes.len()..], towels, lookup) {
-                    lookup.insert(stripes.to_vec(), true);
+                    lookup.insert(stripes, true);
                     return true;
                 }
             }
         }
     }
-    lookup.insert(stripes.to_vec(), false);
+    lookup.insert(stripes, false);
     false
 }
 
@@ -65,12 +65,12 @@ pub fn part1(input: &str) -> u32 {
 
     let towels: Vec<Towel> = iter.next().unwrap().split(", ").map(towel).collect();
     iter.next();
+    let designs: Vec<Towel> = iter.map(towel).collect();
 
-    let mut lookup: HashMap<Vec<Color>, bool> = HashMap::new();
+    let mut lookup: HashMap<&[Color], bool> = HashMap::new();
 
     let mut count = 0;
-    for design in iter.map(towel) {
-        // Can we make this design with the towels?
+    for design in &designs {
         if can_make(&design.stripes, &towels, &mut lookup) {
             count += 1;
         }
@@ -78,7 +78,11 @@ pub fn part1(input: &str) -> u32 {
     count
 }
 
-fn make_ways(stripes: &[Color], towels: &Vec<Towel>, lookup: &mut HashMap<Vec<Color>, u64>) -> u64 {
+fn make_ways<'a>(
+    stripes: &'a [Color],
+    towels: &Vec<Towel>,
+    lookup: &mut HashMap<&'a [Color], u64>,
+) -> u64 {
     if stripes.len() == 0 {
         return 1;
     }
@@ -96,7 +100,7 @@ fn make_ways(stripes: &[Color], towels: &Vec<Towel>, lookup: &mut HashMap<Vec<Co
             }
         }
     }
-    lookup.insert(stripes.to_vec(), ways);
+    lookup.insert(stripes, ways);
     ways
 }
 
@@ -106,12 +110,12 @@ pub fn part2(input: &str) -> u64 {
 
     let towels: Vec<Towel> = iter.next().unwrap().split(", ").map(towel).collect();
     iter.next();
+    let designs: Vec<Towel> = iter.map(towel).collect();
 
-    let mut lookup: HashMap<Vec<Color>, u64> = HashMap::new();
+    let mut lookup: HashMap<&[Color], u64> = HashMap::new();
 
     let mut count = 0;
-    for design in iter.map(towel) {
-        // Can we make this design with the towels?
+    for design in &designs {
         count += make_ways(&design.stripes, &towels, &mut lookup);
     }
     count
