@@ -1,42 +1,48 @@
 use aoc_runner_derive::aoc;
-use std::collections::HashSet;
 
 const MAX_NODE: usize = 26 * 26;
 const MAX_NODE_2: usize = MAX_NODE * MAX_NODE;
+
+const HIGH_T: u16 = ('t' as u8 - 'a' as u8) as u16 * 26;
+const HIGH_U: u16 = ('u' as u8 - 'a' as u8) as u16 * 26;
+const LOW_T: u8 = 't' as u8 - 'a' as u8;
 
 #[aoc(day23, part1)]
 pub fn part1(input: &str) -> u32 {
     let mut total = 0;
 
-    let mut tx_neighbors = vec![HashSet::<(u8, u8)>::new(); 26];
-
-    let mut neighbors = HashSet::<(u8, u8, u8, u8)>::new();
+    let mut tx_neighbors = vec![Vec::with_capacity(MAX_NODE); 26];
+    let mut neighbors = [false; MAX_NODE_2];
 
     for line in input.lines() {
         let bytes = line.as_bytes();
-        if bytes[0] == 't' as u8 {
-            tx_neighbors[(bytes[1] - 'a' as u8) as usize].insert((bytes[3], bytes[4]));
-        }
-        if bytes[3] == 't' as u8 {
-            tx_neighbors[(bytes[4] - 'a' as u8) as usize].insert((bytes[0], bytes[1]));
-        }
+        let a1 = bytes[0] - 'a' as u8;
+        let a2 = bytes[1] - 'a' as u8;
+        let b1 = bytes[3] - 'a' as u8;
+        let b2 = bytes[4] - 'a' as u8;
+        let a = (a1 as u16 * 26) + a2 as u16;
+        let b = (b1 as u16 * 26) + b2 as u16;
 
-        neighbors.insert((bytes[0], bytes[1], bytes[3], bytes[4]));
+        if a1 == LOW_T {
+            tx_neighbors[a2 as usize].push(b);
+        }
+        if b1 == LOW_T {
+            tx_neighbors[b2 as usize].push(a);
+        }
+        neighbors[(a as usize * MAX_NODE) + (b as usize)] = true;
     }
 
     for set in tx_neighbors {
-        for (a1, a2) in &set {
-            for (b1, b2) in &set {
-                if neighbors.contains(&(*a1, *a2, *b1, *b2)) {
+        for a in &set {
+            for b in &set {
+                if neighbors[(*a as usize * MAX_NODE) + (*b as usize)] {
                     total += 2;
-                    if *a1 == 't' as u8 {
+                    if *a >= HIGH_T && *a < HIGH_U {
+                        if *b < HIGH_T || *b >= HIGH_U {
+                            total -= 1;
+                        }
+                    } else if *b >= HIGH_T && *b < HIGH_U {
                         total -= 1;
-                    }
-                    if *b1 == 't' as u8 {
-                        total -= 1;
-                    }
-                    if *a1 == 't' as u8 && *b1 == 't' as u8 {
-                        total += 2;
                     }
                 }
             }
