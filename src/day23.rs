@@ -1,6 +1,9 @@
 use aoc_runner_derive::aoc;
 use std::collections::HashSet;
 
+const MAX_NODE: usize = 26 * 26;
+const MAX_NODE_2: usize = MAX_NODE * MAX_NODE;
+
 #[aoc(day23, part1)]
 pub fn part1(input: &str) -> u32 {
     let mut total = 0;
@@ -46,7 +49,30 @@ pub fn part1(input: &str) -> u32 {
 #[derive(Clone)]
 struct Edge(u16, u16);
 
-fn find_largest_clique(edges: &[Edge]) -> Vec<u16> {
+fn get_non_pivot_edges(edges: &mut [Edge], pivot: u16) -> &mut [Edge] {
+    let mut i = 0;
+
+    for j in 0..edges.len() {
+        if edges[j].0 == pivot || edges[j].1 == pivot {
+            edges.swap(j, i);
+            i += 1;
+        }
+    }
+    &mut edges[i..]
+}
+
+fn get_pivot_neighbor_edges<'a>(edges: &'a mut [Edge], neighbors: &[bool]) -> &'a mut [Edge] {
+    let mut i = 0;
+    for j in 0..edges.len() {
+        if neighbors[edges[j].0 as usize] && neighbors[edges[j].1 as usize] {
+            edges.swap(j, i);
+            i += 1;
+        }
+    }
+    &mut edges[..i]
+}
+
+fn find_largest_clique(edges: &mut [Edge], neighbors: &[bool]) -> Vec<u16> {
     if edges.len() == 0 {
         return vec![];
     }
@@ -56,56 +82,25 @@ fn find_largest_clique(edges: &[Edge]) -> Vec<u16> {
     // Select a node to pivot on
     let pivot = edges[0].0;
 
-    let neighbors: HashSet<u16> = edges
-        .iter()
-        .filter_map(|e| {
-            if e.0 == pivot {
-                Some(e.1)
-            } else if e.1 == pivot {
-                Some(e.0)
-            } else {
-                None
-            }
-        })
-        .collect();
+    let non_pivot_edges = get_non_pivot_edges(edges, pivot);
+    let non_pivot_clique = find_largest_clique(non_pivot_edges, neighbors);
 
-    let non_pivot_edges: Vec<Edge> = edges
-        .iter()
-        .filter_map(|e| {
-            if e.0 == pivot {
-                None
-            } else if e.1 == pivot {
-                None
-            } else {
-                Some(e.clone())
-            }
-        })
-        .collect();
-
-    let non_pivot_clique = find_largest_clique(&non_pivot_edges);
-
-    if non_pivot_clique.len() > neighbors.len() {
+    let pivot_neighbor_edges = get_pivot_neighbor_edges(
+        non_pivot_edges,
+        &neighbors[(pivot as usize * MAX_NODE)..((pivot + 1) as usize * MAX_NODE)],
+    );
+    if pivot_neighbor_edges.len() * 2 < non_pivot_clique.len() * (non_pivot_clique.len() - 1) {
+        // We don't have enough edges to make a clique as big as this one.
         return non_pivot_clique;
     }
 
-    let neighbors_edges: Vec<Edge> = edges
-        .iter()
-        .filter_map(|e| {
-            if neighbors.contains(&e.0) && neighbors.contains(&e.1) {
-                Some(e.clone())
-            } else {
-                None
-            }
-        })
-        .collect();
+    let mut pivot_neighbor_clique = find_largest_clique(pivot_neighbor_edges, neighbors);
 
-    let mut pivot_neighbors_clique = find_largest_clique(&neighbors_edges);
-
-    if non_pivot_clique.len() > pivot_neighbors_clique.len() {
+    if non_pivot_clique.len() > pivot_neighbor_clique.len() {
         non_pivot_clique
     } else {
-        pivot_neighbors_clique.push(pivot);
-        pivot_neighbors_clique
+        pivot_neighbor_clique.push(pivot);
+        pivot_neighbor_clique
     }
 }
 
@@ -143,7 +138,13 @@ pub fn part2(input: &str) -> String {
         })
         .collect();
 
-    let mut clique = find_largest_clique(&mut edges);
+    let mut neighbors = [false; MAX_NODE_2];
+    for Edge(i, j) in &edges {
+        neighbors[*i as usize * MAX_NODE + *j as usize] = true;
+        neighbors[*j as usize * MAX_NODE + *i as usize] = true;
+    }
+
+    let mut clique = find_largest_clique(&mut edges, &neighbors);
     clique.sort();
 
     let bytes: Vec<u8> = clique
