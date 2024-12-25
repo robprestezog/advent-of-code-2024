@@ -52,7 +52,6 @@ pub fn part1(input: &str) -> u32 {
     total / 2
 }
 
-#[derive(Clone)]
 struct Edge(u16, u16);
 
 fn get_non_pivot_edges(edges: &mut [Edge], pivot: u16) -> &mut [Edge] {
