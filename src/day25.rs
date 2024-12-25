@@ -68,6 +68,6 @@ pub fn part1(input: &str) -> u32 {
 }
 
 #[aoc(day25, part2)]
-fn part2(_input: &str) -> String {
-    todo!()
+pub fn part2(_input: &str) -> u32 {
+    50
 }
